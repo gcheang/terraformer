@@ -249,7 +249,7 @@ func (g *ToolchainGenerator) HandleTool(t cdtoolchainv2.ToolModel, toolType stri
 				trigName := normalizeResourceName(*(trigger.Name), true)
 
 				resourceMutex.Lock()
-				g.Resources = append(g.Resources, g.loadPLProp("ibm_cd_tekton_pipeline_trigger", trigID, trigName, plIDref))
+				g.Resources = append(g.Resources, g.loadPLDef("ibm_cd_tekton_pipeline_trigger", trigID, trigName, plIDref, tcID))
 				resourceMutex.Unlock()
 
 				// Trigger Properties
@@ -566,6 +566,9 @@ func (g *ToolchainGenerator) PostConvertHook() error {
 		case "ibm_cd_tekton_pipeline_property":
 			g.TektonPropertyPostProcess(i, res, tools)
 
+		case "ibm_cd_tekton_pipeline_trigger":
+			g.TektonDefinitionPostProcess(i, res, repos)
+
 		case "ibm_cd_tekton_pipeline_trigger_property":
 			g.TektonPropertyPostProcess(i, res, tools)
 
@@ -613,6 +616,7 @@ func (g *ToolchainGenerator) TektonPipelinePostProcess(i int, _ terraformutils.R
 func (g *ToolchainGenerator) TektonDefinitionPostProcess(i int, _ terraformutils.Resource, repos map[string](map[string]string)) {
 	defSource, ok := g.Resources[i].Item["source"].([]interface{})
 	if !ok || len(defSource) == 0 {
+		delete(g.Resources[i].Item, "toolchain_id_actual")
 		return
 	}
 	defSourceMap, ok := defSource[0].(map[string]interface{})
